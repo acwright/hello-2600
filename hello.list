@@ -1,0 +1,334 @@
+ca65 V2.18 - N/A
+Main file   : hello.asm
+Current file: hello.asm
+
+000000r 1               .include "atari2600.inc"
+000000r 2               ; Atari 2600 TIA & RIOT read / write registers
+000000r 2               ;
+000000r 2               ; Florent Flament (contact@florentflament.com), 2017
+000000r 2               
+000000r 2               ; TIA & RIOT registers mapping
+000000r 2               .include "atari2600_tia.inc"
+000000r 3               ; Atari 2600 TIA read / write registers
+000000r 3               ;
+000000r 3               ; Source: DASM - vcs.h
+000000r 3               ; Details available in: Stella Programmer's Guide by Steve Wright
+000000r 3               ;
+000000r 3               ; Florent Flament (contact@florentflament.com), 2017
+000000r 3               
+000000r 3               ; Read registers
+000000r 3               VSYNC  := $00
+000000r 3               VBLANK := $01
+000000r 3               WSYNC  := $02
+000000r 3               RSYNC  := $03
+000000r 3               NUSIZ0 := $04
+000000r 3               NUSIZ1 := $05
+000000r 3               COLUP0 := $06
+000000r 3               COLUP1 := $07
+000000r 3               COLUPF := $08
+000000r 3               COLUBK := $09
+000000r 3               CTRLPF := $0A
+000000r 3               REFP0  := $0B
+000000r 3               REFP1  := $0C
+000000r 3               PF0    := $0D
+000000r 3               PF1    := $0E
+000000r 3               PF2    := $0F
+000000r 3               RESP0  := $10
+000000r 3               RESP1  := $11
+000000r 3               RESM0  := $12
+000000r 3               RESM1  := $13
+000000r 3               RESBL  := $14
+000000r 3               AUDC0  := $15
+000000r 3               AUDC1  := $16
+000000r 3               AUDF0  := $17
+000000r 3               AUDF1  := $18
+000000r 3               AUDV0  := $19
+000000r 3               AUDV1  := $1A
+000000r 3               GRP0   := $1B
+000000r 3               GRP1   := $1C
+000000r 3               ENAM0  := $1D
+000000r 3               ENAM1  := $1E
+000000r 3               ENABL  := $1F
+000000r 3               HMP0   := $20
+000000r 3               HMP1   := $21
+000000r 3               HMM0   := $22
+000000r 3               HMM1   := $23
+000000r 3               HMBL   := $24
+000000r 3               VDELP0 := $25
+000000r 3               VDELP1 := $26
+000000r 3               VDELBL := $27
+000000r 3               RESMP0 := $28
+000000r 3               RESMP1 := $29
+000000r 3               HMOVE  := $2A
+000000r 3               HMCLR  := $2B
+000000r 3               CXCLR  := $2C
+000000r 3               
+000000r 3               ; Write registers
+000000r 3               CXM0P  := $00
+000000r 3               CXM1P  := $01
+000000r 3               CXP0FB := $02
+000000r 3               CXP1FB := $03
+000000r 3               CXM0FB := $04
+000000r 3               CXM1FB := $05
+000000r 3               CXBLPF := $06
+000000r 3               CXPPMM := $07
+000000r 3               INPT0  := $08
+000000r 3               INPT1  := $09
+000000r 3               INPT2  := $0A
+000000r 3               INPT3  := $0B
+000000r 3               INPT4  := $0C
+000000r 3               INPT5  := $0D
+000000r 3               
+000000r 2               .include "atari2600_riot.inc"
+000000r 3               ; Atari 2600 RIOT read / write registers
+000000r 3               ;
+000000r 3               ; Source: DASM - vcs.h
+000000r 3               ; Details available in: Stella Programmer's Guide by Steve Wright
+000000r 3               ;
+000000r 3               ; Florent Flament (contact@florentflament.com), 2017
+000000r 3               
+000000r 3               ; Read registers
+000000r 3               SWCHA  := $0280
+000000r 3               SWACNT := $0281
+000000r 3               SWCHB  := $0282
+000000r 3               SWBCNT := $0283
+000000r 3               INTIM  := $0284
+000000r 3               TIMINT := $0285
+000000r 3               
+000000r 3               ; Write registers
+000000r 3               TIM1T  := $0294
+000000r 3               TIM8T  := $0295
+000000r 3               TIM64T := $0296
+000000r 3               T1024T := $0297
+000000r 3               
+000000r 2               
+000000r 1               
+000000r 1               ; RAM Variables
+000000r 1               
+000000r 1               ; Constants
+000000r 1               
+000000r 1               .org $1000
+001000  1               .segment "STARTUP"
+001000  1               
+001000  1               Reset:
+001000  1  A2 00           ldx #0
+001002  1  A9 00           lda #0
+001004  1               Clear:
+001004  1  95 00           sta 0,x
+001006  1  E8              inx
+001007  1  D0 FB           bne Clear
+001009  1               
+001009  1                  ; Initialize graphics
+001009  1  A9 44           lda #$44
+00100B  1  85 08           sta COLUPF
+00100D  1               
+00100D  1  A9 00           lda #0
+00100F  1  85 09           sta COLUBK
+001011  1               
+001011  1               StartOfFrame:
+001011  1               
+001011  1               ; Start of vertical blank processing
+001011  1  A9 00           lda #0
+001013  1  85 01           sta VBLANK
+001015  1               
+001015  1  A9 03           lda #3
+001017  1  85 00           sta VSYNC
+001019  1               
+001019  1               ; 3 scanlines of VSYNCH signal...
+001019  1  85 02           sta WSYNC
+00101B  1               
+00101B  1  85 02           sta WSYNC
+00101D  1               
+00101D  1  85 02           sta WSYNC
+00101F  1               
+00101F  1               
+00101F  1  A9 00           lda #0
+001021  1  85 00           sta VSYNC
+001023  1               
+001023  1               ; 37 scanlines of vertical blank...
+001023  1               
+001023  1  A2 25           ldx #37
+001025  1               @vblank_loop:
+001025  1  85 02           sta WSYNC
+001027  1  CA              dex
+001028  1  D0 FB           bne @vblank_loop
+00102A  1               
+00102A  1               ; 192 scanlines of picture...
+00102A  1               
+00102A  1  A2 00           ldx #0
+00102C  1  86 0D           stx PF0
+00102E  1  86 0E           stx PF1
+001030  1  86 0F           stx PF2
+001032  1               @header_loop:
+001032  1  85 02           sta WSYNC
+001034  1  E8              inx
+001035  1  E0 1E           cpx #30
+001037  1  D0 F9           bne @header_loop
+001039  1               
+001039  1  A2 06           ldx #6
+00103B  1               @line1_loop:
+00103B  1  A9 A0           lda #%10100000
+00103D  1  85 0D           sta PF0
+00103F  1  A9 69           lda #%01101001
+001041  1  85 0E           sta PF1
+001043  1  A9 88           lda #%10001000
+001045  1  85 0F           sta PF2
+001047  1  EA              nop
+001048  1  EA              nop
+001049  1  EA              nop
+00104A  1  EA              nop
+00104B  1  EA              nop
+00104C  1  EA              nop
+00104D  1  EA              nop
+00104E  1  EA              nop
+00104F  1  EA              nop
+001050  1  A9 80           lda #%10000000
+001052  1  85 0D           sta PF0
+001054  1  A9 26           lda #%00100110
+001056  1  85 0E           sta PF1
+001058  1  A9 32           lda #%00110010
+00105A  1  85 0F           sta PF2
+00105C  1  85 02           sta WSYNC
+00105E  1  CA              dex
+00105F  1  D0 DA           bne @line1_loop
+001061  1               
+001061  1  A2 06           ldx #6
+001063  1               @line2_loop:
+001063  1  A9 A0           lda #%10100000
+001065  1  85 0D           sta PF0
+001067  1  A9 49           lda #%01001001
+001069  1  85 0E           sta PF1
+00106B  1  A9 94           lda #%10010100
+00106D  1  85 0F           sta PF2
+00106F  1  EA              nop
+001070  1  EA              nop
+001071  1  EA              nop
+001072  1  EA              nop
+001073  1  EA              nop
+001074  1  EA              nop
+001075  1  EA              nop
+001076  1  EA              nop
+001077  1  EA              nop
+001078  1  A9 80           lda #%10000000
+00107A  1  85 0D           sta PF0
+00107C  1  A9 55           lda #%01010101
+00107E  1  85 0E           sta PF1
+001080  1  A9 52           lda #%01010010
+001082  1  85 0F           sta PF2
+001084  1  85 02           sta WSYNC
+001086  1  CA              dex
+001087  1  D0 DA           bne @line2_loop
+001089  1               
+001089  1  A2 06           ldx #6
+00108B  1               @line3_loop:
+00108B  1  A9 E0           lda #%11100000
+00108D  1  85 0D           sta PF0
+00108F  1  A9 69           lda #%01101001
+001091  1  85 0E           sta PF1
+001093  1  A9 94           lda #%10010100
+001095  1  85 0F           sta PF2
+001097  1  EA              nop
+001098  1  EA              nop
+001099  1  EA              nop
+00109A  1  EA              nop
+00109B  1  EA              nop
+00109C  1  EA              nop
+00109D  1  EA              nop
+00109E  1  EA              nop
+00109F  1  EA              nop
+0010A0  1  A9 A0           lda #%10100000
+0010A2  1  85 0D           sta PF0
+0010A4  1  A9 56           lda #%01010110
+0010A6  1  85 0E           sta PF1
+0010A8  1  A9 52           lda #%01010010
+0010AA  1  85 0F           sta PF2
+0010AC  1  85 02           sta WSYNC
+0010AE  1  CA              dex
+0010AF  1  D0 DA           bne @line3_loop
+0010B1  1               
+0010B1  1  A2 06           ldx #6
+0010B3  1               @line4_loop:
+0010B3  1  A9 A0           lda #%10100000
+0010B5  1  85 0D           sta PF0
+0010B7  1  A9 49           lda #%01001001
+0010B9  1  85 0E           sta PF1
+0010BB  1  A9 94           lda #%10010100
+0010BD  1  85 0F           sta PF2
+0010BF  1  EA              nop
+0010C0  1  EA              nop
+0010C1  1  EA              nop
+0010C2  1  EA              nop
+0010C3  1  EA              nop
+0010C4  1  EA              nop
+0010C5  1  EA              nop
+0010C6  1  EA              nop
+0010C7  1  EA              nop
+0010C8  1  A9 A0           lda #%10100000
+0010CA  1  85 0D           sta PF0
+0010CC  1  A9 55           lda #%01010101
+0010CE  1  85 0E           sta PF1
+0010D0  1  A9 52           lda #%01010010
+0010D2  1  85 0F           sta PF2
+0010D4  1  85 02           sta WSYNC
+0010D6  1  CA              dex
+0010D7  1  D0 DA           bne @line4_loop
+0010D9  1               
+0010D9  1  A2 06           ldx #6
+0010DB  1               @line5_loop:
+0010DB  1  A9 A0           lda #%10100000
+0010DD  1  85 0D           sta PF0
+0010DF  1  A9 6D           lda #%01101101
+0010E1  1  85 0E           sta PF1
+0010E3  1  A9 09           lda #%00001001
+0010E5  1  85 0F           sta PF2
+0010E7  1  EA              nop
+0010E8  1  EA              nop
+0010E9  1  EA              nop
+0010EA  1  EA              nop
+0010EB  1  EA              nop
+0010EC  1  EA              nop
+0010ED  1  EA              nop
+0010EE  1  EA              nop
+0010EF  1  EA              nop
+0010F0  1  A9 50           lda #%01010000
+0010F2  1  85 0D           sta PF0
+0010F4  1  A9 25           lda #%00100101
+0010F6  1  85 0E           sta PF1
+0010F8  1  A9 36           lda #%00110110
+0010FA  1  85 0F           sta PF2
+0010FC  1  85 02           sta WSYNC
+0010FE  1  CA              dex
+0010FF  1  D0 DA           bne @line5_loop
+001101  1               
+001101  1  A2 00           ldx #0
+001103  1  86 0D           stx PF0
+001105  1  86 0E           stx PF1
+001107  1  86 0F           stx PF2
+001109  1               @footer_loop:
+001109  1  85 02           sta WSYNC
+00110B  1  E8              inx
+00110C  1  E0 84           cpx #132
+00110E  1  D0 F9           bne @footer_loop
+001110  1               
+001110  1  A9 42           lda #%01000010
+001112  1  85 01           sta VBLANK                     ; end of screen - enter blanking
+001114  1               
+001114  1                  ; 30 scanlines of overscan...
+001114  1               
+001114  1  A2 1E           ldx #30
+001116  1               @oscan_loop:
+001116  1  85 02           sta WSYNC
+001118  1  CA              dex
+001119  1  D0 FB           bne @oscan_loop
+00111B  1               
+00111B  1  4C 11 10        jmp StartOfFrame
+00111E  1               
+00111E  1               ; Pattern Data
+00111E  1               
+00111E  1               .org $1FFA
+001FFA  1               .segment "VECTORS"
+001FFA  1               
+001FFA  1  00 10        .word Reset          ; NMI
+001FFC  1  00 10        .word Reset          ; RESET
+001FFE  1  00 10        .word Reset          ; IRQ
+001FFE  1               
